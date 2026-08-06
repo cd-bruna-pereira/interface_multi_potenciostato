@@ -179,7 +179,7 @@ def inject_custom_styles():
             border: 1px solid #dfe3eb;
             border-radius: 12px;
             padding: 0.75rem;
-            background: #f8fafc;
+            background: transparent;
             margin-top: 0.25rem;
         }
         .control-title {
@@ -211,7 +211,7 @@ def inject_custom_styles():
             line-height: 1.35;
         }
         .safe-alert {
-            background: #f1f5f9;
+            background: transparent;
             color: #0f172a;
             border: 1px solid #cbd5e1;
             border-radius: 10px;
@@ -248,6 +248,8 @@ def plot_cell(df: pd.DataFrame, cell_index: int):
         template="plotly",
         height=280,
         margin=dict(l=40, r=20, t=30, b=30),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         xaxis_title="Tempo",
         yaxis_title="Tensao (V)",
         showlegend=False,
