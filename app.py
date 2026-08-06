@@ -328,15 +328,6 @@ def render_main():
 
     df = get_dataframe()
 
-    st.subheader("Monitor serial bruto")
-    serial_log = st.session_state.serial_raw_log
-    st.text_area(
-        "Linhas recebidas da serial (inclui tudo, mesmo fora do padrao):",
-        value="\n".join(serial_log[-120:]),
-        height=220,
-        disabled=True,
-    )
-
     st.subheader("Graficos por celula")
 
     for i in range(1, NUM_CELLS + 1):
@@ -350,7 +341,6 @@ def render_main():
                 f"""
                 <div class="control-card">
                     <div class="control-title">Controle Celula {i}</div>
-                    <div class="control-subtitle">Ligar ou desligar saida da celula</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -407,6 +397,14 @@ def render_main():
     with col_b:
         st.caption(f"Total de leituras armazenadas: {len(df)}")
 
+    st.subheader("Monitor serial bruto")
+    serial_log = st.session_state.serial_raw_log
+    st.text_area(
+        "Linhas recebidas via porta serial:",
+        value="\n".join(serial_log[-120:]),
+        height=220,
+        disabled=True,
+    )
 
 # ---------------------------------------------------------------------------
 # Execucao
