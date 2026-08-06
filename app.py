@@ -245,7 +245,7 @@ def plot_cell(df: pd.DataFrame, cell_index: int):
             )
         )
     fig.update_layout(
-        template="plotly_white",
+        template="plotly",
         height=280,
         margin=dict(l=40, r=20, t=30, b=30),
         xaxis_title="Tempo",
