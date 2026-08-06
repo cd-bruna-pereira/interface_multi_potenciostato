@@ -35,11 +35,13 @@ from streamlit_autorefresh import st_autorefresh
 
 NUM_CELLS = 5
 CELL_LABELS = [f"C{i+1}" for i in range(NUM_CELLS)]   # C1 ... C5
-READ_INTERVAL_SECONDS = 5
+READ_INTERVAL_SECONDS = 2
 LINE_REGEX = re.compile(r"V(\d):\s*(-?\d+\.?\d*)\s*V")
+MAX_SERIAL_LOG_LINES = 300
+CELL_COLORS = ["#1f77b4", "#2ca02c", "#ff7f0e", "#d62728", "#9467bd"]
 
 st.set_page_config(
-    page_title="Monitor de Celulas",
+    page_title="Monitor Multi Potenciostato",
     layout="wide",
 )
 
@@ -54,6 +56,7 @@ def init_session_state():
         "ser": None,
         "port_name": None,
         "readings": [],          # lista de dicts: {hora, C1, C2, C3, C4, C5}
+        "serial_raw_log": [],    # ultimas linhas brutas recebidas da serial
         "last_read_time": 0.0,
         "connection_error": None,
     }
@@ -111,6 +114,13 @@ def read_new_data(ser) -> dict:
     try:
         while ser.in_waiting:
             raw = ser.readline().decode("utf-8", errors="ignore").strip()
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            if raw:
+                st.session_state.serial_raw_log.append(f"[{timestamp}] {raw}")
+            else:
+                st.session_state.serial_raw_log.append(f"[{timestamp}] <linha vazia>")
+            st.session_state.serial_raw_log = st.session_state.serial_raw_log[-MAX_SERIAL_LOG_LINES:]
+
             match = LINE_REGEX.match(raw)
             if match:
                 idx = int(match.group(1))
@@ -161,12 +171,67 @@ def on_toggle_change(cell_index: int):
     send_command(cell_index, novo_estado)
 
 
+def inject_custom_styles():
+    st.markdown(
+        """
+        <style>
+        .control-card {
+            border: 1px solid #dfe3eb;
+            border-radius: 12px;
+            padding: 0.75rem;
+            background: #f8fafc;
+            margin-top: 0.25rem;
+        }
+        .control-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+        .control-subtitle {
+            font-size: 0.85rem;
+            color: #334155;
+            margin-bottom: 0.6rem;
+        }
+        div[data-testid="stToggle"] label {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        div[data-testid="stToggle"] {
+            transform: scale(1.12);
+            transform-origin: top left;
+            margin-bottom: 0.7rem;
+        }
+        .danger-alert {
+            background: #b91c1c;
+            color: #ffffff;
+            border: 1px solid #7f1d1d;
+            border-radius: 10px;
+            padding: 0.7rem;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+        .safe-alert {
+            background: #f1f5f9;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 0.65rem;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Graficos
 # ---------------------------------------------------------------------------
 
 def plot_cell(df: pd.DataFrame, cell_index: int):
     label = CELL_LABELS[cell_index - 1]
+    color = CELL_COLORS[cell_index - 1]
     fig = go.Figure()
     if not df.empty:
         fig.add_trace(
@@ -174,8 +239,8 @@ def plot_cell(df: pd.DataFrame, cell_index: int):
                 x=df["hora"],
                 y=df[label],
                 mode="lines+markers",
-                line=dict(width=2),
-                marker=dict(size=5),
+                line=dict(width=3, color=color),
+                marker=dict(size=6, color=color),
                 name=label,
             )
         )
@@ -239,6 +304,7 @@ def render_sidebar():
 
 def render_main():
     st.title("Monitor de Tensao das Celulas")
+    inject_custom_styles()
 
     if not st.session_state.connected:
         st.info("Conecte-se ao Arduino na barra lateral para iniciar o monitoramento.")
@@ -262,6 +328,15 @@ def render_main():
 
     df = get_dataframe()
 
+    st.subheader("Monitor serial bruto")
+    serial_log = st.session_state.serial_raw_log
+    st.text_area(
+        "Linhas recebidas da serial (inclui tudo, mesmo fora do padrao):",
+        value="\n".join(serial_log[-120:]),
+        height=220,
+        disabled=True,
+    )
+
     st.subheader("Graficos por celula")
 
     for i in range(1, NUM_CELLS + 1):
@@ -271,20 +346,34 @@ def render_main():
             st.plotly_chart(plot_cell(df, i), use_container_width=True, key=f"chart_{i}")
 
         with col_control:
-            st.write("")
+            st.markdown(
+                f"""
+                <div class="control-card">
+                    <div class="control-title">Controle Celula {i}</div>
+                    <div class="control-subtitle">Ligar ou desligar saida da celula</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
             st.toggle(
-                f"Celula {i}",
+                f"Ligar/Desligar C{i}",
                 key=f"toggle_{i}",
                 on_change=on_toggle_change,
                 args=(i,),
             )
             if st.session_state[f"toggle_{i}"]:
-                st.warning(
-                    f"Celula {i} ligada. Nao mexer nesta celula enquanto "
-                    "estiver ativa."
+                st.markdown(
+                    (
+                        f"<div class='danger-alert'>Celula {i} LIGADA.<br>"
+                        "Nao mexer nesta celula enquanto estiver ativa.</div>"
+                    ),
+                    unsafe_allow_html=True,
                 )
             else:
-                st.caption("Celula desligada.")
+                st.markdown(
+                    "<div class='safe-alert'>Celula desligada.</div>",
+                    unsafe_allow_html=True,
+                )
 
     st.divider()
 
