@@ -212,7 +212,7 @@ def inject_custom_styles():
         }
         .safe-alert {
             background: transparent;
-            color: #0f172a;
+            color: #ffffff;
             border: 1px solid #cbd5e1;
             border-radius: 10px;
             padding: 0.65rem;
