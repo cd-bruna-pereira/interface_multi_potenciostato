@@ -38,6 +38,7 @@ CELL_LABELS = [f"C{i+1}" for i in range(NUM_CELLS)]   # C1 ... C5
 READ_INTERVAL_SECONDS = 2
 LINE_REGEX = re.compile(r"V(\d):\s*(-?\d+\.?\d*)\s*V")
 MAX_SERIAL_LOG_LINES = 300
+MAX_POINTS_PER_CHART = 100
 CELL_COLORS = ["#1f77b4", "#2ca02c", "#ff7f0e", "#d62728", "#9467bd"]
 
 st.set_page_config(
@@ -232,12 +233,13 @@ def inject_custom_styles():
 def plot_cell(df: pd.DataFrame, cell_index: int):
     label = CELL_LABELS[cell_index - 1]
     color = CELL_COLORS[cell_index - 1]
+    chart_df = df.tail(MAX_POINTS_PER_CHART)
     fig = go.Figure()
-    if not df.empty:
+    if not chart_df.empty:
         fig.add_trace(
             go.Scatter(
-                x=df["hora"],
-                y=df[label],
+                x=chart_df["hora"],
+                y=chart_df[label],
                 mode="lines+markers",
                 line=dict(width=3, color=color),
                 marker=dict(size=6, color=color),
