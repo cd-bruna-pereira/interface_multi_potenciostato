@@ -253,7 +253,7 @@ def plot_cell(df: pd.DataFrame, cell_index: int):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         xaxis_title="Tempo",
-        yaxis_title="Tensao (V)",
+        yaxis_title="Tensão (V)",
         showlegend=False,
         title=dict(text=f"Celula {cell_index} ({label})", x=0.0, font=dict(size=15)),
     )
@@ -265,7 +265,7 @@ def plot_cell(df: pd.DataFrame, cell_index: int):
 # ---------------------------------------------------------------------------
 
 def render_sidebar():
-    st.sidebar.header("Conexao com o Arduino")
+    st.sidebar.header("Conexão com o Arduino")
 
     if not st.session_state.connected:
         ports = list_serial_ports()
@@ -297,8 +297,8 @@ def render_sidebar():
 
     st.sidebar.divider()
     st.sidebar.caption(
-        "Os dados sao lidos automaticamente a cada "
-        f"{READ_INTERVAL_SECONDS} segundos enquanto a conexao estiver ativa."
+        "Os dados são lidos automaticamente a cada "
+        f"{READ_INTERVAL_SECONDS} segundos enquanto a conexão estiver ativa."
     )
 
 
@@ -307,7 +307,7 @@ def render_sidebar():
 # ---------------------------------------------------------------------------
 
 def render_main():
-    st.title("Monitor de Tensao das Celulas")
+    st.title("Monitor de Tensão das Celulas")
     inject_custom_styles()
 
     if not st.session_state.connected:
@@ -359,7 +359,7 @@ def render_main():
                 st.markdown(
                     (
                         f"<div class='danger-alert'>Celula {i} LIGADA.<br>"
-                        "Nao mexer nesta celula enquanto estiver ativa.</div>"
+                        "Não mexer nesta celula enquanto estiver ativa.</div>"
                     ),
                     unsafe_allow_html=True,
                 )
